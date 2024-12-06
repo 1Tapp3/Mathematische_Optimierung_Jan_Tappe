@@ -28,25 +28,25 @@ class DownhillSimplex:
     def _apply_bounds(self, point: np.ndarray) -> np.ndarray:
         return np.minimum(self.upper_bounds, np.maximum(self.lower_bounds, point))
 
-    def _reflect(self, centroid, worst, alpha):
+    def _reflect(self, centroid:np.array, worst:np.array, alpha)->np.array:
         reflected = self._apply_bounds(centroid + alpha * (centroid - worst))
         return reflected, self.func(reflected)
 
-    def _expand(self, centroid, reflected, gamma):
+    def _expand(self, centroid:np.array, reflected:np.array, gamma)->np.array:
         expanded = self._apply_bounds(centroid + gamma * (reflected - centroid))
         return expanded, self.func(expanded)
 
-    def _contract(self, centroid, worst, beta):
+    def _contract(self, centroid:np.array, worst:np.array, beta)->np.array:
         contracted = self._apply_bounds(centroid + beta * (worst - centroid))
         return contracted, self.func(contracted)
 
-    def _shrink(self, simplex, best, sigma):
+    def _shrink(self, simplex:np.array, best:np.array, sigma)->np.array:
         for i in range(1, len(simplex)):
             simplex[i] = self._apply_bounds(simplex[best] + sigma * (simplex[i] - simplex[best]))
         return simplex
 
     
-    def optimize(self, alpha=1.0, beta=0.5, gamma=2.0, sigma=0.5, max_iter=2000, tol=1e-8):
+    def optimize(self, alpha:float =1.0, beta:float =0.5, gamma:float =2.0, sigma:float =0.5, max_iter:int =2000, tol:float =1e-8) -> np.array:
         dim = len(self.x0)
         simplex = np.empty((dim + 1, dim), dtype=float)
         f_values = np.empty(dim + 1, dtype=float)
