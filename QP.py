@@ -11,8 +11,8 @@ class QP(object):
     def QP(self, Q: np.array, c: np.array, A: np.array, b: np.array) -> np.array:
         """Minimize_x 1/2*x^T*Q*x+c^T*x subject to A*x<=b for given matrices Q (symmetric) and A and given vectors c and b. """
         # long live global options, which cannot be set locally
-        sol = solvers.qp(matrix(np.asfarray(Q)), matrix(np.asfarray(c)),
-                         matrix(np.asfarray(A)), matrix(np.asfarray(b)), options={'show_progress': False})
+        sol = solvers.qp(matrix(np.asarray(Q, dtype=float)), matrix(np.asarray(c, dtype=float)),
+                         matrix(np.asarray(A, dtype=float)), matrix(np.asarray(b, dtype=float)), options={'show_progress': False})
         self.LagrangeMultipliers = np.array(sol['z'])
         return np.array(sol['x']).flatten()
 

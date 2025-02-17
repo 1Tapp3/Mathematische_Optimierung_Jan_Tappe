@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Callable, Tuple
+from Set import MultidimensionalInterval
 
 
 class DownhillSimplex:
@@ -46,7 +47,7 @@ class DownhillSimplex:
         return simplex
 
     
-    def optimize(self, alpha:float =1.0, beta:float =0.5, gamma:float =2.0, sigma:float =0.5, max_iter:int =2000, tol:float =1e-8) -> np.array:
+    def optimize(self, alpha:float =1.0, beta:float =0.5, gamma:float =2.0, sigma:float =0.5, max_iter:int =50000, tol:float =1e-8) -> np.array:
         dim = len(self.x0)
         simplex = np.empty((dim + 1, dim), dtype=float)
         f_values = np.empty(dim + 1, dtype=float)
@@ -60,11 +61,11 @@ class DownhillSimplex:
             simplex[i + 1] = self._apply_bounds(x)
             f_values[i + 1] = self.func(simplex[i + 1])
 
-        #Main loop
+        #Main loop because it has less overhead than recusion in this application, loop is already readable enough for debugging
         for iteration in range(max_iter):
             worst = np.argmax(f_values)
             best = np.argmin(f_values)
-            second_worst = np.argsort(f_values)[-2]
+            second_worst = np.argpartition(f_values, -2)[-2]
             centroid = np.mean(simplex[np.arange(dim + 1) != worst], axis=0)
 
             reflected, f_reflected = self._reflect(centroid, simplex[worst], alpha)

@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from DownhillSimplex import DownhillSimplex, rosenbrock
+import time
 
 class TestDownhillSimplex(unittest.TestCase):
     def setUp(self):
@@ -69,11 +70,26 @@ class TestDownhillSimplex(unittest.TestCase):
         self.assertTrue(np.allclose(shrunk_simplex, expected_simplex, atol=1e-3))
 
     def test_optimize(self):
-        result, value = self.optimizer.optimize(alpha=1.0, beta=0.5, gamma=2.0, sigma=0.5, max_iter=1000, tol=1e-6)
+        result, value = self.optimizer.optimize()
 
-        self.assertIsInstance(result, np.ndarray)
-        self.assertIsInstance(value, float)
         self.assertTrue(np.allclose(result, np.array([1.0, 1.0]), atol=1e-3))
+        self.assertAlmostEqual(value, 0.0, delta=1e-3)
+
+    def test_highDim(self):
+        dim =150
+        x0 = np.random.uniform(-6.0,7.0, size=dim)
+
+        optimizer = DownhillSimplex(rosenbrock, x0)
+        optimizer.set_bounds((np.full(dim, -5.0), np.full(dim, 5.0)))
+
+        start_time = time.time()
+        result, value = optimizer.optimize()
+        end_time = time.time()
+        
+        print(f"Optimization completed in {end_time - start_time:.2f} seconds.")
+        print("Best point (truncated):", result[:5], "...")
+        print("Best value:", value)
+
         self.assertAlmostEqual(value, 0.0, delta=1e-3)
 
 if __name__ == '__main__':
