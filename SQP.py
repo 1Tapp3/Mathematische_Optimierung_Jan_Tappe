@@ -5,12 +5,11 @@ from SetsFromFunctions import BoundedSet
 import LineSearch
 from DifferentiableFunction import DifferentiableFunction, IDifferentiableFunction
 
-
 class SQP(object):
     def __init__(self):
         super().__init__()
 
-    def Minimize(self, function: IDifferentiableFunction, startingpoint: np.array, iterations: int = 100, tol_x=1e-5, tol_y=1e-5):
+    def Minimize(self, function: IDifferentiableFunction, startingpoint: np.array, iterations: int = 100, tol_x=1e-5, tol_y=1e-5, rho=10):
         """Minimize the function using SQP"""
 
         x = startingpoint
@@ -50,11 +49,19 @@ class SQP(object):
 
             # Change current position
             s = alpha*p
-            x = x+s
+            x_new = x+s
             assert domain.contains(x), "all intermediate points must be valid"
 
             # consider bounds -> This should happen in line search and in the QP
             x = np.maximum(np.minimum(x, upperBounds), lowerBounds)
+
+            #Merit function ensures improvment of the function -> Algorithm behaves better when opima are close to bounds
+            merit_function = lambda x: function.evaluate(x) + rho * np.sum(np.maximum(0, ineq.evaluate(x)))
+            if merit_function(x_new) >= merit_function(x):
+                rho *= 10
+            else:
+                x = x_new
+
 
             # Update Hessian using BFGS, this needs the search drection to satisfy the strong Wolfe condition
             y_new = function.evaluate(x)
@@ -76,6 +83,6 @@ class SQP(object):
                                                                     ) < 1e-4, "Hessian approximation needs to be symmetric"
             y = y_new
 
-            # todo Buch p. 536f
+            # todo Buch p.536f
 
         return x
