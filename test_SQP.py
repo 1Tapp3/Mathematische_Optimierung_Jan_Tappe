@@ -150,6 +150,32 @@ class tests_SQP(unittest.TestCase):
             self.assertTrue(True in [np.linalg.norm(x-result) <
                             1e-2 for result in results])
 
+    def test_boundary_optimum(self):
+        sqp = SQP()
+        
+        R = AffineSpace(2)
+        X = DifferentiableFunction(
+            name="x", domain=R, evaluate=lambda x: np.array([x[0]]), jacobian=lambda x: np.array([[1, 0]]))
+        Y = DifferentiableFunction(
+            name="y", domain=R, evaluate=lambda x: np.array([x[1]]), jacobian=lambda x: np.array([[0, 1]]))
+        
+        domain = BoundedSet(lower_bounds=np.array([0.5, 0.0]), upper_bounds=np.array([1, 1]), 
+                             InequalityConstraints=DifferentiableFunction(
+                                 name="boundary", domain=R, 
+                                 evaluate=lambda x: np.array([x[0] + x[1] - 1]), 
+                                 jacobian=lambda x: np.array([[1, 1]])))
+        
+        f = DifferentiableFunction(
+            name="objective", domain=domain, 
+            evaluate=lambda x: (x[0] - 0.5)**2 + (x[1] - 0.5)**2, 
+            jacobian=lambda x: np.array([2*(x[0] - 0.5), 2*(x[1] - 0.5)]))
+        
+        x_opt = sqp.Minimize(f, startingpoint=np.array([1.0, 0.0]))
+        print(x_opt)
+        y = f.evaluate(x_opt)
+        print(y)
+        self.assertAlmostEqual(y, 0.0, 4)
+
 
 if __name__ == '__main__':
     unittest.main()
