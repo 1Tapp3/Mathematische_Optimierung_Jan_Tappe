@@ -9,7 +9,7 @@ class SQP(object):
     def __init__(self):
         super().__init__()
 
-    def Minimize(self, function: IDifferentiableFunction, startingpoint: np.array, iterations: int = 100, tol_x=1e-5, tol_y=1e-5, rho=10):
+    def Minimize(self, function: IDifferentiableFunction, startingpoint: np.array, iterations: int = 100, tol_x=1e-5, tol_y=1e-5, rho: float=10.0, rho_scale: float=10.0):
         """Minimize the function using SQP"""
 
         x = startingpoint
@@ -56,9 +56,9 @@ class SQP(object):
             x = np.maximum(np.minimum(x, upperBounds), lowerBounds)
 
             #Merit function ensures improvment of the function -> Algorithm behaves better when opima are close to bounds
-            merit_function = lambda x: function.evaluate(x) + rho * np.sum(np.maximum(0, ineq.evaluate(x)))
+            merit_function = lambda x: function.evaluate(x) + rho * np.sum(np.maximum(0, ineq_eval))
             if merit_function(x_new) >= merit_function(x):
-                rho *= 10
+                rho *= rho_scale
             else:
                 x = x_new
 

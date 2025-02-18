@@ -144,7 +144,9 @@ class tests_SQP(unittest.TestCase):
             [-1.0, -0.5, 0.0, 0.5, 1.0], [-1.0, -0.5, 0.0, 0.5, 1.0]))]
 
         for startingpoint in startingpoints:
-            x = sqp.Minimize(f, startingpoint=startingpoint)
+            x = sqp.Minimize(f, startingpoint=startingpoint, rho_scale=1.5)
+            print(x)
+            print(f.evaluate(x))
             self.assertTrue(f.domain.contains(x))
             self.assertAlmostEqual(f.evaluate(x).item(), 0, 2)
             self.assertTrue(True in [np.linalg.norm(x-result) <
@@ -161,9 +163,9 @@ class tests_SQP(unittest.TestCase):
         
         domain = BoundedSet(lower_bounds=np.array([0.5, 0.0]), upper_bounds=np.array([1, 1]), 
                              InequalityConstraints=DifferentiableFunction(
-                                 name="boundary", domain=R, 
-                                 evaluate=lambda x: np.array([x[0] + x[1] - 1]), 
-                                 jacobian=lambda x: np.array([[1, 1]])))
+                             name="boundary", domain=R, 
+                             evaluate=lambda x: np.array([x[0] + x[1] - 1]), 
+                             jacobian=lambda x: np.array([[1, 1]])))
         
         f = DifferentiableFunction(
             name="objective", domain=domain, 
