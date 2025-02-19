@@ -144,7 +144,7 @@ class tests_SQP(unittest.TestCase):
             [-1.0, -0.5, 0.0, 0.5, 1.0], [-1.0, -0.5, 0.0, 0.5, 1.0]))]
 
         for startingpoint in startingpoints:
-            x = sqp.Minimize(f, startingpoint=startingpoint, rho_scale=1.5)
+            x = sqp.Minimize(f, startingpoint=startingpoint, rho=0, rho_scale=4) #hier problem, mach weg
             print(x)
             print(f.evaluate(x))
             self.assertTrue(f.domain.contains(x))

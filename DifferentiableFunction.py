@@ -74,6 +74,28 @@ class IDifferentiableFunction(object):
                 np.array([[power]])*self.evaluate(v)**(power-1), self.jacobian(v))
         )
 
+    @multimethod
+    def exp_of(self, base: float = np.e) -> 'IDifferentiableFunction':
+        """Computes the element-wise exponential of the function with a given base (default e)."""
+        return DifferentiableFunction(
+            name=f"exp_{base}({self.name})",
+            domain=self.domain,
+            evaluate=lambda v: base ** self.evaluate(v),
+            jacobian=lambda v: (base ** self.evaluate(v)) * np.log(base) * self.jacobian(v)
+        )
+
+    @multimethod
+    def exp_of(self, base: 'IDifferentiableFunction') -> 'IDifferentiableFunction':
+        """Computes the element-wise exponential where the base is another differentiable function."""
+        return DifferentiableFunction(
+            name=f"({base.name})^({self.name})",
+            domain=self.domain.intersect(base.domain),
+            evaluate=lambda v: base.evaluate(v) ** self.evaluate(v),
+            jacobian=lambda v: (base.evaluate(v) ** self.evaluate(v)) * (
+                self.jacobian(v) * np.log(base.evaluate(v)) + (self.evaluate(v) / base.evaluate(v)) * base.jacobian(v)
+            )
+        )
+
     def __rmul__(self, other: Union[int, float]):
         """Multiplies the function by a scalar"""
         return self.__mul__(other)

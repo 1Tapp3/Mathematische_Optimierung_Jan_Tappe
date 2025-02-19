@@ -37,7 +37,7 @@ class tests_functions(unittest.TestCase):
             ff.jacobian(np.array([2])), np.array([32]))
         self.assertEqual(
             fff.jacobian(np.array([2])), np.array([1024]))
-
+ 
     def test_2d(self):
         R2 = AffineSpace(2)
         f = DifferentiableFunction(name="(x,y)->(x^2*y,x*y^2)", domain=R2, evaluate=lambda x: np.array(
@@ -255,6 +255,31 @@ class tests_functions(unittest.TestCase):
                 self.assertAlmostEqual(
                     f.jacobian(np.array([a, b])).sum(), 0)
 
+    def test_exponential_function_base_e(self):
+
+        R = AffineSpace(1)
+        f = DifferentiableFunction(
+            name="x", domain=R, evaluate=lambda x: x, jacobian=lambda x: np.array([1])
+        )
+        exp_f = f.exp_of() #-> e^f
+        self.assertEqual(exp_f.evaluate(np.array([0]))[0], 1.0)
+        self.assertEqual(exp_f.evaluate(np.array([1]))[0], np.e)
+        self.assertEqual(exp_f.evaluate(np.array([2]))[0], np.e**2)
+        
+        self.assertEqual(exp_f.jacobian(np.array([0])), 1.0)
+        self.assertEqual(exp_f.jacobian(np.array([1])), np.e)
+        self.assertEqual(exp_f.jacobian(np.array([2])), np.e**2)
+
+    def test_exp_function_function(self):
+        R2 = AffineSpace(2)
+        f1= DifferentiableFunction(
+            name="(x,y)->(x^2+y)", domain=R2, evaluate=lambda x: x[0]**2 + x[1], jacobian=lambda x: np.array([2*x[0]+1], [1])
+        )
+        f2 = DifferentiableFunction(
+            name="(x,y)->(x^3+y^2)", domain=R2, evaluate=lambda x: x[0]**3 + x[1]**2, jacobian=lambda x: np.array([3*x[0]**2+1], [2*x[1]])
+        )
+        exp_f = f1.exp_of(f2) #-> f2^f1
+        self.assertEqual(exp_f.evaluate(np.array([1, 1])).tolist(), 4)  #Irgendwas passt hier noch nicht
 
 if __name__ == '__main__':
     unittest.main()
