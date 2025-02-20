@@ -3,6 +3,7 @@ import numpy as np
 from Set import AffineSpace
 from DifferentiableFunction import DifferentiableFunction
 from BFGS import BFGS
+import time
 
 
 class tests_BFGS(unittest.TestCase):
@@ -107,6 +108,27 @@ class tests_BFGS(unittest.TestCase):
             [-0.270845, -0.923039]))  # start at local maximum
         self.assertAlmostEqual(f.evaluate(x).item(), 0, 5)
 
+    def test_BFGS8(self):
+        """Test BFGS in a high-dimensional setting (1000 dimensions) with a fixed starting point, timed to evaluate code optimizations"""
+        dim = 1000  
+        R = AffineSpace(dim)
+        f = DifferentiableFunction(
+            name="high_dim_quadratic",
+            domain=R,
+            evaluate=lambda x: np.array([np.sum(x**2)]),
+            jacobian=lambda x: np.array([2*x])
+        )
+        
+        bfgs = BFGS()
+        x0 = np.ones(dim) * 10 
+
+        start_time = time.time()
+        x = bfgs.Minimize(f, startingpoint=x0)
+        end_time = time.time()
+
+        self.assertAlmostEqual(f.evaluate(x).item(), 0, 5)
+        runtime = end_time - start_time
+        print(f"BFGS high-dimensional test completed in {runtime:.3f} seconds")
 
 if __name__ == '__main__':
     unittest.main()

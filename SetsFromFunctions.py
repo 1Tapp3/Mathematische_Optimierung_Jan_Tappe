@@ -33,7 +33,7 @@ class BoundedSet(MultidimensionalInterval):
             return x
         else:
             return None
-
+        
     @ property
     def InequalityConstraints(self) -> IDifferentiableFunction:
         """Returns the function describing the inequality constraints of this set"""
