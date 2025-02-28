@@ -1,10 +1,9 @@
 import numpy as np
-from typing import Callable, Tuple
-from Set import MultidimensionalInterval
+from typing import Callable, Tuple, List
 
 
 class DownhillSimplex:
-    def __init__(self, func: Callable[[np.ndarray], float], x0: np.ndarray):
+    def __init__(self, func: Callable[[np.ndarray], float], x0: np.ndarray,):
         """
         Initialize the Downhill Simplex optimizer.
 
@@ -16,6 +15,7 @@ class DownhillSimplex:
         self.x0 = np.array(x0, dtype=float)
         self.lower_bounds = np.full(x0.shape, -np.inf)
         self.upper_bounds = np.full(x0.shape, np.inf)
+        self.constrains = []
 
     def set_bounds(self, bounds: Tuple[np.ndarray, np.ndarray]):
         """
@@ -26,24 +26,65 @@ class DownhillSimplex:
         """
         self.lower_bounds, self.upper_bounds = bounds
 
+    def set_constrains(self, constrains: List[Callable[[np.array], bool]]):
+        self.constrains = constrains
+
+    def clear_constraints(self):
+        self.constrains = []
+
+
     def _apply_bounds(self, point: np.ndarray) -> np.ndarray:
         return np.minimum(self.upper_bounds, np.maximum(self.lower_bounds, point))
+    
+    def _is_feasible(self, point: np.array) -> bool:
+        return all(constraint(point) for constraint in self.constrains)
 
     def _reflect(self, centroid:np.array, worst:np.array, alpha)->np.array:
         reflected = self._apply_bounds(centroid + alpha * (centroid - worst))
+        step_size = alpha
+        while not self._is_feasible(reflected) and step_size > 1e-6:
+            step_size /= 2
+            reflected = self._apply_bounds(centroid + step_size * (centroid - worst))
+    
+        if not self._is_feasible(reflected):
+            return worst, self.func(worst)
+
         return reflected, self.func(reflected)
 
     def _expand(self, centroid:np.array, reflected:np.array, gamma)->np.array:
         expanded = self._apply_bounds(centroid + gamma * (reflected - centroid))
+        step_size = gamma
+        while not self._is_feasible(expanded) and step_size > 1e-6:
+            step_size /= 2
+            expanded = self._apply_bounds(centroid + step_size * (reflected - centroid))
+        
+        if not self._is_feasible(expanded):
+            return reflected, self.func(reflected)
         return expanded, self.func(expanded)
 
     def _contract(self, centroid:np.array, worst:np.array, beta)->np.array:
         contracted = self._apply_bounds(centroid + beta * (worst - centroid))
+        step_size = beta
+        while not self._is_feasible(contracted) and step_size > 1e-6:
+            step_size /= 2
+            contracted = self._apply_bounds(centroid + step_size * (worst - centroid))
+
+        if not self._is_feasible(contracted):
+            return worst, self.func(worst)
+        
         return contracted, self.func(contracted)
 
     def _shrink(self, simplex:np.array, best:np.array, sigma)->np.array:
         for i in range(1, len(simplex)):
             simplex[i] = self._apply_bounds(simplex[best] + sigma * (simplex[i] - simplex[best]))
+            step_size = sigma
+
+            while not self._is_feasible(simplex[i]) and step_size > 1e-6:
+                step_size /= 2
+                simplex[i] = self._apply_bounds(simplex[best] + step_size * (simplex[i] - simplex[best]))
+
+            if not self._is_feasible(simplex[i]):
+                simplex[i] = simplex[best]
         return simplex
 
     
@@ -56,8 +97,9 @@ class DownhillSimplex:
 
         #Filling Simplex
         for i in range(dim):
+            a = 0.2
             x = np.copy(self.x0)
-            x[i] += 0.5 if x[i] == 0 else 0.2 * x[i]
+            x[i] += a if x[i] == 0 else a * x[i]
             simplex[i + 1] = self._apply_bounds(x)
             f_values[i + 1] = self.func(simplex[i + 1])
 
@@ -101,14 +143,3 @@ class DownhillSimplex:
         return simplex[best], f_values[best]
 
 
-# Define the Rosenbrock function (banana function)
-def rosenbrock(x: np.ndarray, a: float = 1, b: float = 100) -> float:
-    return (a - x[0])**2 + b * (x[1] - x[0]**2)**2
-
-
-# Example usage with bounds
-optimizer = DownhillSimplex(func=rosenbrock, x0=np.array([5, -3]))
-optimizer.set_bounds((np.array([-6, -6]), np.array([6, 6])))
-best_point, best_value = optimizer.optimize()
-print("Best point:", best_point)
-print("Best value:", best_value)
