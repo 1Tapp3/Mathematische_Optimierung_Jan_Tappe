@@ -68,7 +68,7 @@ class TestDownhillSimplex(unittest.TestCase):
         result, value = self.optimizer.optimize()
         self.assertTrue(np.allclose(result, np.array([1.0, 1.0]), atol=1e-3))
         self.assertAlmostEqual(value, 0.0, delta=1e-3)
-        self.optimizer.clear_constraints()
+        self.optimizer.clear()
 
     def test_reflect(self):
         centroid = np.array([1.0, 1.0])

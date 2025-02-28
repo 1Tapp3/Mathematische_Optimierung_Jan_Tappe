@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Callable, Tuple, List
 
-
 class DownhillSimplex:
     def __init__(self, func: Callable[[np.ndarray], float], x0: np.ndarray,):
         """
@@ -27,10 +26,18 @@ class DownhillSimplex:
         self.lower_bounds, self.upper_bounds = bounds
 
     def set_constrains(self, constrains: List[Callable[[np.array], bool]]):
+        """
+        Set constrains for the variables.
+
+        Parameters:
+        - constrains: A tuple Callable Constrains.
+        """
         self.constrains = constrains
 
-    def clear_constraints(self):
+    def clear(self):
         self.constrains = []
+        self.lower_bounds = np.full(self.x0.shape, -np.inf)
+        self.upper_bounds = np.full(self.x0.shape, np.inf)
 
 
     def _apply_bounds(self, point: np.ndarray) -> np.ndarray:
@@ -39,56 +46,34 @@ class DownhillSimplex:
     def _is_feasible(self, point: np.array) -> bool:
         return all(constraint(point) for constraint in self.constrains)
 
-    def _reflect(self, centroid:np.array, worst:np.array, alpha)->np.array:
-        reflected = self._apply_bounds(centroid + alpha * (centroid - worst))
-        step_size = alpha
-        while not self._is_feasible(reflected) and step_size > 1e-6:
+    def _adjust_point(self, base_point: np.array, direction: np.array, factor: float) -> Tuple[np.array, float]:
+        point = self._apply_bounds(base_point + factor * direction)
+        step_size = factor
+        while not self._is_feasible(point) and step_size > 1e-6:
             step_size /= 2
-            reflected = self._apply_bounds(centroid + step_size * (centroid - worst))
+            point = self._apply_bounds(base_point + step_size * direction)
+        
+        if not self._is_feasible(point):
+            return base_point, self.func(base_point)
+
+        return point, self.func(point)
+
+    def _reflect(self, centroid: np.array, worst: np.array, alpha) -> np.array:
+        return self._adjust_point(centroid, centroid - worst, alpha)
+
+    def _expand(self, centroid: np.array, reflected: np.array, gamma) -> np.array:
+        return self._adjust_point(centroid, reflected - centroid, gamma)
+
+    def _contract(self, centroid: np.array, worst: np.array, beta) -> np.array:
+        return self._adjust_point(centroid, worst - centroid, beta)
     
-        if not self._is_feasible(reflected):
-            return worst, self.func(worst)
-
-        return reflected, self.func(reflected)
-
-    def _expand(self, centroid:np.array, reflected:np.array, gamma)->np.array:
-        expanded = self._apply_bounds(centroid + gamma * (reflected - centroid))
-        step_size = gamma
-        while not self._is_feasible(expanded) and step_size > 1e-6:
-            step_size /= 2
-            expanded = self._apply_bounds(centroid + step_size * (reflected - centroid))
-        
-        if not self._is_feasible(expanded):
-            return reflected, self.func(reflected)
-        return expanded, self.func(expanded)
-
-    def _contract(self, centroid:np.array, worst:np.array, beta)->np.array:
-        contracted = self._apply_bounds(centroid + beta * (worst - centroid))
-        step_size = beta
-        while not self._is_feasible(contracted) and step_size > 1e-6:
-            step_size /= 2
-            contracted = self._apply_bounds(centroid + step_size * (worst - centroid))
-
-        if not self._is_feasible(contracted):
-            return worst, self.func(worst)
-        
-        return contracted, self.func(contracted)
-
-    def _shrink(self, simplex:np.array, best:np.array, sigma)->np.array:
+    def _shrink(self, simplex: np.array, best: np.array, sigma) -> np.array:
         for i in range(1, len(simplex)):
-            simplex[i] = self._apply_bounds(simplex[best] + sigma * (simplex[i] - simplex[best]))
-            step_size = sigma
-
-            while not self._is_feasible(simplex[i]) and step_size > 1e-6:
-                step_size /= 2
-                simplex[i] = self._apply_bounds(simplex[best] + step_size * (simplex[i] - simplex[best]))
-
-            if not self._is_feasible(simplex[i]):
-                simplex[i] = simplex[best]
+            simplex[i], _ = self._adjust_point(simplex[best], simplex[i] - simplex[best], sigma)
         return simplex
 
-    
-    def optimize(self, alpha:float =1.0, beta:float =0.5, gamma:float =2.0, sigma:float =0.5, max_iter:int =50000, tol:float =1e-8) -> np.array:
+
+    def optimize(self, alpha: float = 1.0, beta: float = 0.5, gamma: float = 2.0, sigma: float = 0.5, max_iter: int = 50000, tol: float = 1e-8) -> np.array:
         dim = len(self.x0)
         simplex = np.empty((dim + 1, dim), dtype=float)
         f_values = np.empty(dim + 1, dtype=float)
@@ -141,5 +126,3 @@ class DownhillSimplex:
                 break
 
         return simplex[best], f_values[best]
-
-
