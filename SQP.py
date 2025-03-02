@@ -56,7 +56,7 @@ class SQP(object):
             x = np.maximum(np.minimum(x, upperBounds), lowerBounds)
 
             #Merit function ensures improvment of the function -> Algorithm behaves better when opima are close to bounds
-            merit_function = lambda x: function.evaluate(x) + rho * np.sum(np.maximum(0, ineq_eval))
+            merit_function = lambda x: function.evaluate(x) + rho * np.sum(np.maximum(0, ineq.evaluate(x)))
             if merit_function(x_new) >= merit_function(x):
                 rho *= rho_scale
             else:
@@ -83,5 +83,6 @@ class SQP(object):
             y = y_new
 
             # todo Buch p.536f
+
 
         return x
