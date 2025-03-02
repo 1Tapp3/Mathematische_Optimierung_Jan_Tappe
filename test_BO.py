@@ -74,7 +74,7 @@ class tests_BO(unittest.TestCase):
         self.assertAlmostEqual(np.linalg.norm(x), math.sqrt(3), 3)
 
     def test_Himmelblau_restricted_Matern(self):
-        bo = BO(kernel=MaternKernel)
+        bo = BO()
 
         R = AffineSpace(2)
         X = DifferentiableFunction(
@@ -120,7 +120,30 @@ class tests_BO(unittest.TestCase):
         self.assertAlmostEqual(f.evaluate(x).item(), 0, 1)
         self.assertTrue(True in [np.linalg.norm(x-result) <
                                  1e-1 for result in results])
+        
+    def test_BO_with_initial_data(self):
+        data_x = np.array([[1, 1], [-1, 1]])
+        data_y = np.array([2, 2])
+        bo = BO(data_x=data_x, data_y=data_y)
 
+        R = AffineSpace(2)
+        X = DifferentiableFunction(
+            name="x", domain=R, evaluate=lambda x: np.array([x[0]]), jacobian=lambda x: np.array([[1, 0]]))
+        Y = DifferentiableFunction(
+            name="y", domain=R, evaluate=lambda x: np.array([x[1]]), jacobian=lambda x: np.array([[0, 1]]))
+        const = X**2+Y**2-3
+        domain = BoundedSet(lower_bounds=np.array(
+            [-2, -2]), upper_bounds=np.array([2, 2]), InequalityConstraints=const)
+        X = DifferentiableFunction(
+            name="x", domain=domain, evaluate=lambda x: np.array([x[0]]), jacobian=lambda x: np.array([[1, 0]]))
+        Y = DifferentiableFunction(
+            name="y", domain=domain, evaluate=lambda x: np.array([x[1]]), jacobian=lambda x: np.array([[0, 1]]))
+
+        f = X**2+Y**2
+        x = bo.Minimize(f)
+        self.assertTrue(f.domain.contains(x))
+        self.assertAlmostEqual(
+            np.linalg.norm(x-np.array([0, 0])), 0, 0)
 
 if __name__ == '__main__':
     unittest.main()

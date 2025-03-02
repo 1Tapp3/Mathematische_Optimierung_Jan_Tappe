@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from math import gamma
 from abc import ABC, abstractmethod
 from DifferentiableFunction import DifferentiableFunction
 from Set import AffineSpace

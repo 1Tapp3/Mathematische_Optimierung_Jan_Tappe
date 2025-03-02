@@ -14,7 +14,7 @@ class BO(object):
         Args:
             data_x (np.array, optional): Input data points.
             data_y (np.array, optional): Observed function values.
-            kernel_type (str, optional): Kernel type ('RBF' or 'Matern'). Defaults to 'RBF'.
+            Kernel select kernelfunction to use with BO
             nu (float, optional): Smoothness parameter for the Matérn kernel. Defaults to 2.5.
             lengthscale (float, optional): Lengthscale parameter controlling kernel behavior. Defaults to 1.0.
         """
@@ -37,13 +37,17 @@ class BO(object):
         d = domain._ambient_dimension
         if self.data_x.shape[0] == 0:
             data_x = np.empty((0, d))   
-            data_y = np.empty((0,))    
+            data_y = np.empty((0,))
+        else:
+            data_x = np.copy(self.data_x)
+            data_y = np.copy(self.data_y)    
 
         gp = GP(data_x=data_x, data_y=data_y, kernel=self.kernel)
         sqp = SQP()
-
+        print("NEW")
+        print(data_x)
+        print(data_y)
         for step in range(iterations):
-            # UCB with adjustable weighting for uncertainty
             acquisition_function = gp.PosteriorMean() - 2 * gp.PosteriorStandardDeviation() + 0 * function
 
             # new measurement point
@@ -57,5 +61,8 @@ class BO(object):
             data_x = np.concatenate((data_x, x.reshape(1, -1)), axis=0)
             data_y = np.concatenate((data_y, y), axis=0)
             gp = GP(data_x=data_x, data_y=data_y, kernel=self.kernel)
-
+            print("X")
+            print(data_x)
+            print("Y")
+            print(data_y)
         return data_x[np.argmin(data_y), :]
