@@ -62,7 +62,6 @@ class SQP(object):
             else:
                 x = x_new
 
-
             # Update Hessian using BFGS, this needs the search drection to satisfy the strong Wolfe condition
             y_new = function.evaluate(x)
             delta_y = y - y_new

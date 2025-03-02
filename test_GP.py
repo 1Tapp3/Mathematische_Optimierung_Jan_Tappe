@@ -1,7 +1,7 @@
 import unittest
 import itertools
 import numpy as np
-from GP import GP
+from GP import *
 
 
 class tests_GP(unittest.TestCase):
@@ -154,7 +154,38 @@ class tests_GP(unittest.TestCase):
             np.array([])).item(), 1)
         self.assertAlmostEqual(sigma.evaluate(
             np.array([])).item(), 1)
+        
+    def test_GP_Matern_kernel(self):
+        data_x = np.array([[1, 2], [3, 4], [5, 6]])
+        data_y = np.array([7, 8, 9])
+        gp = GP(data_x=data_x, data_y=data_y, kernel=MaternKernel())
+        mu = gp.PosteriorMean()
+        sigma2 = gp.PosteriorVariance()
+        sigma = gp.PosteriorStandardDeviation()
 
+        self.assertAlmostEqual(mu.evaluate(
+            np.array([1, 2])).item(), 7, 3)
+        self.assertAlmostEqual(mu.evaluate(
+            np.array([3, 4])).item(), 8, 3)
+        self.assertAlmostEqual(mu.evaluate(
+            np.array([5, 6])).item(), 9, 3)
+
+        self.assertGreater(sigma2.evaluate(np.array([0, 0])).item(), 0)
+        self.assertGreater(sigma2.evaluate(np.array([2, 1])).item(), 0)
+        self.assertGreater(sigma2.evaluate(np.array([4, 3])).item(), 0)
+        self.assertGreater(sigma2.evaluate(np.array([6, 5])).item(), 0)
+
+    def test_GP_Periodic_kernel(self):
+        data_x = np.array([[1, 2], [3, 4], [5, 6]])
+        data_y = np.array([7, 8, 9])
+        gp = GP(data_x=data_x, data_y=data_y, kernel=PeriodicKernel(lengthscale=1.0, period=2.0))
+        mu = gp.PosteriorMean()
+        sigma2 = gp.PosteriorVariance()
+        sigma = gp.PosteriorStandardDeviation()
+
+        self.assertAlmostEqual(mu.evaluate(np.array([1, 2])).item(), 7, 3)
+        self.assertAlmostEqual(mu.evaluate(np.array([3, 4])).item(), 8, 3)
+        self.assertAlmostEqual(mu.evaluate(np.array([5, 6])).item(), 9, 3)
 
 if __name__ == '__main__':
     unittest.main()

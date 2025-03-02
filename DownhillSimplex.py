@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Callable, Tuple, List
 
+#I dont use ISet or IDifferentiableFunction since DS dont need a Function to be differentiable
 class DownhillSimplex:
     def __init__(self, func: Callable[[np.ndarray], float], x0: np.ndarray,):
         """
@@ -46,16 +47,14 @@ class DownhillSimplex:
     def _is_feasible(self, point: np.array) -> bool:
         return all(constraint(point) for constraint in self.constrains)
 
-    def _adjust_point(self, base_point: np.array, direction: np.array, factor: float) -> Tuple[np.array, float]:
-        point = self._apply_bounds(base_point + factor * direction)
+    def _adjust_point(self, base_point: np.array, other_point: np.array, factor: float) -> Tuple[np.array, float]:
+        point = self._apply_bounds(base_point + factor * other_point)
         step_size = factor
         while not self._is_feasible(point) and step_size > 1e-6:
             step_size /= 2
-            point = self._apply_bounds(base_point + step_size * direction)
-        
+            point = self._apply_bounds(base_point + step_size * other_point)
         if not self._is_feasible(point):
             return base_point, self.func(base_point)
-
         return point, self.func(point)
 
     def _reflect(self, centroid: np.array, worst: np.array, alpha) -> np.array:

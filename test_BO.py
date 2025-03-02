@@ -6,6 +6,7 @@ from Set import AffineSpace
 from SetsFromFunctions import BoundedSet
 from DifferentiableFunction import DifferentiableFunction
 from BayesianOptimization import BO
+from GP import *
 
 
 class tests_BO(unittest.TestCase):
@@ -52,6 +53,28 @@ class tests_BO(unittest.TestCase):
 
     def test_Himmelblau_restricted(self):
         bo = BO()
+
+        R = AffineSpace(2)
+        X = DifferentiableFunction(
+            name="x", domain=R, evaluate=lambda x: np.array([x[0]]), jacobian=lambda x: np.array([[1, 0]]))
+        Y = DifferentiableFunction(
+            name="y", domain=R, evaluate=lambda x: np.array([x[1]]), jacobian=lambda x: np.array([[0, 1]]))
+        const = X**2+Y**2-3
+        domain = BoundedSet(lower_bounds=np.array(
+            [-2, -2]), upper_bounds=np.array([2, 2]), InequalityConstraints=const)
+        X = DifferentiableFunction(
+            name="x", domain=domain, evaluate=lambda x: np.array([x[0]]), jacobian=lambda x: np.array([[1, 0]]))
+        Y = DifferentiableFunction(
+            name="y", domain=domain, evaluate=lambda x: np.array([x[1]]), jacobian=lambda x: np.array([[0, 1]]))
+
+        f = (X**2+Y-11)**2+(X+Y**2-7)**2
+
+        x = bo.Minimize(f)
+        self.assertTrue(f.domain.contains(x))
+        self.assertAlmostEqual(np.linalg.norm(x), math.sqrt(3), 3)
+
+    def test_Himmelblau_restricted_Matern(self):
+        bo = BO(kernel=MaternKernel)
 
         R = AffineSpace(2)
         X = DifferentiableFunction(
